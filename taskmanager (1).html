@@ -1,0 +1,2178 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Streak — Task Manager</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    :root {
+      --bg: #080808;
+      --bg2: #0f0f0f;
+      --bg3: #161616;
+      --bg4: #1e1e1e;
+      --bg5: #252525;
+      --green: #22c55e;
+      --green-dim: #16a34a;
+      --green-dark: #052e16;
+      --green-glow: rgba(34, 197, 94, 0.15);
+      --green1: rgba(34, 197, 94, 0.15);
+      --green2: rgba(34, 197, 94, 0.35);
+      --green3: rgba(34, 197, 94, 0.6);
+      --green4: #22c55e;
+      --border: #1f1f1f;
+      --border2: #2a2a2a;
+      --border3: #333;
+      --text: #f2f2f2;
+      --text2: #a0a0a0;
+      --text3: #555;
+      --red: #ef4444;
+      --r: 8px;
+      --r2: 12px;
+      --r3: 16px;
+    }
+
+    html,
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg2)
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border3);
+      border-radius: 2px
+    }
+
+    /* ── LAYOUT ── */
+    .app {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 16px
+    }
+
+    /* ── HEADER ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 0 18px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+      gap: 12px;
+      flex-wrap: wrap
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--green-dark);
+      border: 1px solid var(--green-dim);
+      border-radius: var(--r);
+      display: flex;
+      align-items: center;
+      justify-content: center
+    }
+
+    .brand-name {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px
+    }
+
+    .brand-name span {
+      color: var(--green)
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap
+    }
+
+    .date-badge {
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 12px;
+      color: var(--text2);
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.3px
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 16px;
+      border-radius: var(--r);
+      border: 1px solid var(--border3);
+      background: var(--bg3);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .18s ease;
+      white-space: nowrap
+    }
+
+    .btn:hover {
+      border-color: var(--green-dim);
+      background: var(--bg4);
+      color: var(--green)
+    }
+
+    .btn.primary {
+      background: var(--green-dark);
+      border-color: var(--green-dim);
+      color: var(--green)
+    }
+
+    .btn.primary:hover {
+      background: var(--green-dim);
+      color: #fff
+    }
+
+    .btn svg {
+      flex-shrink: 0
+    }
+
+    /* ── STATS ROW ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+      margin-bottom: 20px
+    }
+
+    .stat-card {
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: var(--r2);
+      padding: 14px 16px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color .2s
+    }
+
+    .stat-card:hover {
+      border-color: var(--border3)
+    }
+
+    .stat-card.highlight {
+      border-color: var(--green-dim);
+      background: linear-gradient(135deg, var(--bg3), var(--green-dark))
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--green);
+      opacity: 0;
+      transition: .2s
+    }
+
+    .stat-card.highlight::before {
+      opacity: 1
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 6px
+    }
+
+    .stat-value {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -1px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace
+    }
+
+    .stat-card.highlight .stat-value {
+      color: var(--green)
+    }
+
+    .stat-sub {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 3px
+    }
+
+    /* ── MAIN GRID ── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 16px
+    }
+
+    @media(max-width:800px) {
+      .main-grid {
+        grid-template-columns: 1fr
+      }
+    }
+
+    /* ── SECTION CARD ── */
+    .section-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r2);
+      overflow: hidden
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      gap: 8px
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .section-title .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green)
+    }
+
+    .section-body {
+      padding: 16px 18px
+    }
+
+    /* ── WEEK NAV ── */
+    .week-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      gap: 8px
+    }
+
+    .week-label {
+      font-size: 13px;
+      color: var(--text2);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500
+    }
+
+    .week-nav-btns {
+      display: flex;
+      gap: 4px
+    }
+
+    .icon-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: var(--r);
+      border: 1px solid var(--border2);
+      background: var(--bg3);
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all .15s;
+      flex-shrink: 0
+    }
+
+    .icon-btn:hover {
+      border-color: var(--green-dim);
+      color: var(--green);
+      background: var(--bg4)
+    }
+
+    /* ── DAY TABS ── */
+    .day-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+      padding-bottom: 2px
+    }
+
+    .day-tab {
+      flex: 1;
+      min-width: 44px;
+      text-align: center;
+      padding: 8px 4px;
+      border-radius: var(--r);
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      cursor: pointer;
+      transition: all .15s;
+      font-size: 11px
+    }
+
+    .day-tab .dt-name {
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 10px
+    }
+
+    .day-tab .dt-num {
+      font-size: 15px;
+      font-weight: 700;
+      margin-top: 2px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text2)
+    }
+
+    .day-tab.active {
+      border-color: var(--green);
+      background: var(--green-dark)
+    }
+
+    .day-tab.active .dt-name {
+      color: var(--green-dim)
+    }
+
+    .day-tab.active .dt-num {
+      color: var(--green)
+    }
+
+    .day-tab.has-tasks {
+      position: relative
+    }
+
+    .day-tab.has-tasks::after {
+      content: '';
+      position: absolute;
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--green-dim)
+    }
+
+    .day-tab.completed::after {
+      background: var(--green);
+      box-shadow: 0 0 4px var(--green)
+    }
+
+    .day-tab:hover:not(.active) {
+      border-color: var(--border3);
+      background: var(--bg4)
+    }
+
+    /* ── TASK LIST ── */
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 80px
+    }
+
+    .task-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 14px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      transition: all .18s;
+      position: relative;
+      animation: taskIn .2s ease
+    }
+
+    @keyframes taskIn {
+      from {
+        opacity: 0;
+        transform: translateY(-6px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    .task-item:hover {
+      border-color: var(--border3)
+    }
+
+    .task-item.done {
+      opacity: 0.55
+    }
+
+    .task-item.done .task-name {
+      text-decoration: line-through;
+      color: var(--text3)
+    }
+
+    .task-check {
+      width: 20px;
+      height: 20px;
+      border-radius: 5px;
+      border: 1.5px solid var(--border3);
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all .15s
+    }
+
+    .task-check:hover {
+      border-color: var(--green-dim)
+    }
+
+    .task-check.checked {
+      background: var(--green);
+      border-color: var(--green)
+    }
+
+    .task-name {
+      flex: 1;
+      font-size: 13px;
+      color: var(--text);
+      font-weight: 500;
+      min-width: 0;
+      word-break: break-word
+    }
+
+    .task-tags {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap
+    }
+
+    .task-tag {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      background: var(--bg4);
+      border: 1px solid var(--border2);
+      color: var(--text3);
+      font-family: 'JetBrains Mono', monospace
+    }
+
+    .task-actions {
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: .15s
+    }
+
+    .task-item:hover .task-actions {
+      opacity: 1
+    }
+
+    .task-act-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 5px;
+      border: 1px solid var(--border2);
+      background: var(--bg4);
+      color: var(--text3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all .12s;
+      flex-shrink: 0
+    }
+
+    .task-act-btn:hover {
+      border-color: var(--green-dim);
+      color: var(--green);
+      background: var(--bg5)
+    }
+
+    .task-act-btn.del:hover {
+      border-color: var(--red);
+      color: var(--red)
+    }
+
+    .task-repeat-badge {
+      font-size: 9px;
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: var(--green-dark);
+      border: 1px solid var(--green-dim);
+      color: var(--green);
+      font-family: 'JetBrains Mono', monospace;
+      margin-left: 4px;
+      white-space: nowrap
+    }
+
+    .all-done-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: var(--green-dark);
+      border: 1px solid var(--green-dim);
+      border-radius: var(--r);
+      font-size: 13px;
+      color: var(--green);
+      margin-top: 4px;
+      animation: taskIn .25s ease
+    }
+
+    .no-tasks {
+      text-align: center;
+      padding: 28px 0;
+      color: var(--text3);
+      font-size: 13px
+    }
+
+    /* ── ADD TASK FORM ── */
+    .add-task-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      margin-top: 12px
+    }
+
+    .form-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap
+    }
+
+    .input {
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: var(--r);
+      padding: 9px 13px;
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      outline: none;
+      transition: border-color .15s;
+      width: 100%
+    }
+
+    .input:focus {
+      border-color: var(--green-dim)
+    }
+
+    .input::placeholder {
+      color: var(--text3)
+    }
+
+    select.input {
+      cursor: pointer;
+      appearance: none
+    }
+
+    .form-label {
+      font-size: 11px;
+      color: var(--text3);
+      margin-bottom: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px
+    }
+
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-width: 120px
+    }
+
+    .repeat-options {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap
+    }
+
+    .repeat-opt {
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--border2);
+      background: var(--bg3);
+      color: var(--text2);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all .14s;
+      font-family: 'Syne', sans-serif
+    }
+
+    .repeat-opt.active {
+      border-color: var(--green);
+      background: var(--green-dark);
+      color: var(--green)
+    }
+
+    .repeat-opt:hover:not(.active) {
+      border-color: var(--border3);
+      color: var(--text)
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text2)
+    }
+
+    .toggle {
+      width: 34px;
+      height: 18px;
+      background: var(--bg4);
+      border: 1px solid var(--border3);
+      border-radius: 9px;
+      cursor: pointer;
+      position: relative;
+      transition: all .15s;
+      flex-shrink: 0
+    }
+
+    .toggle.on {
+      background: var(--green-dim);
+      border-color: var(--green)
+    }
+
+    .toggle::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform .15s
+    }
+
+    .toggle.on::after {
+      transform: translateX(16px)
+    }
+
+    /* ── HEATMAP ── */
+    .heatmap-wrapper {
+      padding: 0
+    }
+
+    .heatmap-head {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px
+    }
+
+    .heatmap-meta {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap
+    }
+
+    .hm-stat {
+      font-size: 12px;
+      color: var(--text2)
+    }
+
+    .hm-stat strong {
+      color: var(--text);
+      font-weight: 600
+    }
+
+    .heatmap-scroll {
+      overflow-x: auto;
+      padding: 16px 18px
+    }
+
+    .heatmap-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 600px
+    }
+
+    .hm-months {
+      display: flex;
+      margin-bottom: 4px;
+      padding-left: 28px
+    }
+
+    .hm-month-label {
+      font-size: 11px;
+      color: var(--text3);
+      font-family: 'JetBrains Mono', monospace;
+      flex-shrink: 0
+    }
+
+    .hm-rows {
+      display: flex;
+      gap: 4px
+    }
+
+    .hm-day-labels {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      padding-top: 1px;
+      margin-right: 4px
+    }
+
+    .hm-day-lbl {
+      font-size: 10px;
+      color: var(--text3);
+      font-family: 'JetBrains Mono', monospace;
+      height: 12px;
+      line-height: 12px;
+      width: 22px;
+      text-align: right
+    }
+
+    .hm-cols {
+      display: flex;
+      gap: 3px
+    }
+
+    .hm-col {
+      display: flex;
+      flex-direction: column;
+      gap: 3px
+    }
+
+    .hm-cell {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      background: var(--bg4);
+      cursor: pointer;
+      transition: transform .12s, box-shadow .12s;
+      flex-shrink: 0;
+      position: relative
+    }
+
+    .hm-cell:hover {
+      transform: scale(1.3);
+      z-index: 5
+    }
+
+    .hm-cell.l0 {
+      background: var(--bg4)
+    }
+
+    .hm-cell.l1 {
+      background: var(--green1);
+      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.2)
+    }
+
+    .hm-cell.l2 {
+      background: var(--green2)
+    }
+
+    .hm-cell.l3 {
+      background: var(--green3)
+    }
+
+    .hm-cell.l4 {
+      background: var(--green4);
+      box-shadow: 0 0 5px rgba(34, 197, 94, 0.4)
+    }
+
+    .hm-cell.future {
+      background: var(--bg3);
+      opacity: 0.4;
+      cursor: default
+    }
+
+    .hm-cell.today-cell {
+      box-shadow: 0 0 0 1.5px var(--green) !important
+    }
+
+    .hm-legend {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      justify-content: flex-end
+    }
+
+    .hm-legend-label {
+      font-size: 10px;
+      color: var(--text3)
+    }
+
+    .hm-legend-cells {
+      display: flex;
+      gap: 3px
+    }
+
+    .hm-tooltip {
+      position: fixed;
+      background: var(--bg5);
+      border: 1px solid var(--border3);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 11px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      pointer-events: none;
+      z-index: 100;
+      display: none;
+      white-space: nowrap
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 14px
+    }
+
+    .progress-ring-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 0 10px
+    }
+
+    .progress-ring-container {
+      position: relative;
+      width: 120px;
+      height: 120px
+    }
+
+    .progress-ring-container svg {
+      transform: rotate(-90deg)
+    }
+
+    .progress-ring-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center
+    }
+
+    .progress-pct {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--green);
+      font-family: 'JetBrains Mono', monospace;
+      line-height: 1
+    }
+
+    .progress-sub {
+      font-size: 10px;
+      color: var(--text3);
+      margin-top: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px
+    }
+
+    .week-overview {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      padding: 0 18px 16px
+    }
+
+    .wo-day {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px
+    }
+
+    .wo-name {
+      font-size: 9px;
+      color: var(--text3);
+      text-transform: uppercase
+    }
+
+    .wo-bar-wrap {
+      height: 40px;
+      display: flex;
+      align-items: flex-end;
+      width: 100%
+    }
+
+    .wo-bar {
+      width: 100%;
+      background: var(--border);
+      border-radius: 2px;
+      transition: height .4s ease, background .3s;
+      min-height: 3px
+    }
+
+    .wo-bar.full {
+      background: var(--green)
+    }
+
+    .wo-bar.partial {
+      background: var(--green-dim)
+    }
+
+    .wo-pct {
+      font-size: 9px;
+      color: var(--text3);
+      font-family: 'JetBrains Mono', monospace
+    }
+
+    /* ── STREAK DISPLAY ── */
+    .streak-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 0
+    }
+
+    .streak-flame {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .streak-num {
+      font-size: 42px;
+      font-weight: 800;
+      color: var(--green);
+      font-family: 'JetBrains Mono', monospace;
+      line-height: 1;
+      letter-spacing: -2px
+    }
+
+    .streak-info {
+      display: flex;
+      flex-direction: column
+    }
+
+    .streak-label {
+      font-size: 11px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.7px
+    }
+
+    .streak-desc {
+      font-size: 12px;
+      color: var(--text2);
+      margin-top: 3px
+    }
+
+    .streak-bars {
+      padding: 12px 18px;
+      display: flex;
+      gap: 3px
+    }
+
+    .streak-bar {
+      flex: 1;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      transition: background .3s
+    }
+
+    .streak-bar.on {
+      background: var(--green)
+    }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      backdrop-filter: blur(4px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all
+    }
+
+    .modal {
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: var(--r3);
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: translateY(16px);
+      transition: transform .2s
+    }
+
+    .modal-overlay.open .modal {
+      transform: translateY(0)
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .modal-title {
+      font-size: 15px;
+      font-weight: 700
+    }
+
+    .modal-close {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid var(--border2);
+      background: var(--bg3);
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all .14s
+    }
+
+    .modal-close:hover {
+      border-color: var(--red);
+      color: var(--red)
+    }
+
+    .modal-body {
+      padding: 20px
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 16px
+    }
+
+    /* ── CHEER ANIMATION ── */
+    .cheer-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      pointer-events: none;
+      display: none
+    }
+
+    .cheer-overlay.active {
+      display: block
+    }
+
+    .particle {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: particleFly 2s ease-out forwards
+    }
+
+    @keyframes particleFly {
+      0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 1
+      }
+
+      100% {
+        transform: translate(var(--tx), var(--ty)) scale(0);
+        opacity: 0
+      }
+    }
+
+    .cheer-banner {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      background: var(--bg2);
+      border: 1px solid var(--green);
+      border-radius: var(--r3);
+      padding: 28px 40px;
+      text-align: center;
+      z-index: 501;
+      transition: transform .3s cubic-bezier(.175, .885, .32, 1.275)
+    }
+
+    .cheer-banner.show {
+      transform: translate(-50%, -50%) scale(1)
+    }
+
+    .cheer-banner h2 {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--green);
+      margin-bottom: 8px
+    }
+
+    .cheer-banner p {
+      font-size: 14px;
+      color: var(--text2)
+    }
+
+    .cheer-streak-num {
+      font-size: 52px;
+      font-weight: 800;
+      color: var(--green);
+      font-family: 'JetBrains Mono', monospace;
+      display: block;
+      line-height: 1;
+      margin: 10px 0 4px
+    }
+
+    /* ── MISC ── */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 20px;
+      gap: 10px;
+      color: var(--text3)
+    }
+
+    .empty-state svg {
+      opacity: 0.3
+    }
+
+    .empty-state p {
+      font-size: 13px
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0 18px
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500
+    }
+
+    .badge.green {
+      background: var(--green-dark);
+      color: var(--green);
+      border: 1px solid rgba(34, 197, 94, 0.3)
+    }
+
+    @media(max-width:600px) {
+      .app {
+        padding: 10px
+      }
+
+      .stats-row {
+        grid-template-columns: repeat(2, 1fr)
+      }
+
+      .header {
+        padding: 12px 0
+      }
+
+      .section-body {
+        padding: 12px 14px
+      }
+
+      .section-head {
+        padding: 11px 14px
+      }
+
+      .heatmap-scroll {
+        padding: 12px 14px
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="app">
+
+    <!-- HEADER -->
+    <div class="header">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M3 9L7 13L15 5" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </div>
+        <div>
+          <div class="brand-name">Str<span>eak</span></div>
+          <div style="font-size:10px;color:var(--text3);letter-spacing:0.5px;text-transform:uppercase">Task Manager
+          </div>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="date-badge" id="currentDateBadge"></div>
+        <button class="btn primary" onclick="openAddModal()">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+            <path d="M6.5 1v11M1 6.5h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          </svg>
+          Add Task
+        </button>
+      </div>
+    </div>
+
+    <!-- STATS ROW -->
+    <div class="stats-row" id="statsRow">
+      <div class="stat-card highlight">
+        <div class="stat-label">Current Streak</div>
+        <div class="stat-value" id="statStreak">0</div>
+        <div class="stat-sub">days in a row</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Max Streak</div>
+        <div class="stat-value" id="statMax">0</div>
+        <div class="stat-sub">personal best</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Active</div>
+        <div class="stat-value" id="statTotal">0</div>
+        <div class="stat-sub">days completed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">This Week</div>
+        <div class="stat-value" id="statWeek">0/7</div>
+        <div class="stat-sub">days done</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Tasks Today</div>
+        <div class="stat-value" id="statToday">0</div>
+        <div class="stat-sub" id="statTodayDone">0 completed</div>
+      </div>
+    </div>
+
+    <!-- HEATMAP -->
+    <div class="section-card" style="margin-bottom:16px">
+      <div class="heatmap-head">
+        <div>
+          <div style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px">
+            <span class="dot"
+              style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;box-shadow:0 0 8px var(--green)"></span>
+            Activity Heatmap
+          </div>
+          <div class="heatmap-meta" style="margin-top:5px">
+            <span class="hm-stat"><strong id="hmTotalDays">0</strong> active days</span>
+            <span class="hm-stat">Streak <strong id="hmStreak">0</strong></span>
+            <span class="hm-stat">Max <strong id="hmMax">0</strong></span>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace">Mar 2026 – Dec 2028</div>
+      </div>
+      <div class="heatmap-scroll">
+        <div class="heatmap-inner" id="heatmapInner"></div>
+        <div class="hm-legend">
+          <span class="hm-legend-label">Less</span>
+          <div class="hm-legend-cells">
+            <div class="hm-cell l0" style="width:11px;height:11px"></div>
+            <div class="hm-cell l1" style="width:11px;height:11px"></div>
+            <div class="hm-cell l2" style="width:11px;height:11px"></div>
+            <div class="hm-cell l3" style="width:11px;height:11px"></div>
+            <div class="hm-cell l4" style="width:11px;height:11px"></div>
+          </div>
+          <span class="hm-legend-label">More</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="main-grid">
+
+      <!-- LEFT: TASK PANEL -->
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="section-card">
+          <div class="section-head">
+            <div class="section-title"><span class="dot"></span>Weekly Tasks</div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <div class="week-nav-btns">
+                <div class="icon-btn" onclick="changeWeek(-1)" title="Previous week">
+                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                    <path d="M8 2L4 6.5L8 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                  </svg>
+                </div>
+                <div class="icon-btn" onclick="changeWeek(0)" title="Current week"
+                  style="font-size:9px;font-family:'JetBrains Mono',monospace;width:36px;color:var(--text3)">NOW</div>
+                <div class="icon-btn" onclick="changeWeek(1)" title="Next week">
+                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                    <path d="M5 2L9 6.5L5 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                  </svg>
+                </div>
+              </div>
+              <button class="btn" style="padding:5px 10px;font-size:11px" onclick="openAddModal()">
+                <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                  <path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                </svg>
+                Task
+              </button>
+            </div>
+          </div>
+          <div class="section-body">
+            <div class="week-label" id="weekLabel"
+              style="margin-bottom:12px;font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace"></div>
+            <!-- Day tabs -->
+            <div class="day-tabs" id="dayTabs"></div>
+            <!-- Task list -->
+            <div class="task-list" id="taskList"></div>
+            <!-- Add inline -->
+            <div class="add-task-form" id="inlineForm" style="display:none">
+              <div class="form-field">
+                <div class="form-label">Task name</div>
+                <input class="input" id="inlineTaskName" placeholder="What needs to be done?"
+                  onkeydown="if(event.key==='Enter')saveInlineTask()">
+              </div>
+              <div class="form-row">
+                <div class="form-field">
+                  <div class="form-label">Applies to</div>
+                  <select class="input" id="inlineScope">
+                    <option value="day">This day only</option>
+                    <option value="week" selected>This week</option>
+                    <option value="always">Repeat always</option>
+                  </select>
+                </div>
+                <div class="form-field">
+                  <div class="form-label">Repeat</div>
+                  <select class="input" id="inlineRepeat">
+                    <option value="none">No repeat</option>
+                    <option value="weekly">Every week</option>
+                    <option value="daily">Every day</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row" style="justify-content:flex-end;gap:6px">
+                <button class="btn" onclick="toggleInlineForm(false)">Cancel</button>
+                <button class="btn primary" onclick="saveInlineTask()">Add Task</button>
+              </div>
+            </div>
+            <button class="btn"
+              style="width:100%;justify-content:center;margin-top:10px;padding:8px;border-style:dashed;color:var(--text3);font-size:12px"
+              onclick="toggleInlineForm(true)" id="addInlineBtn">
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                <path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+              </svg>
+              Quick add task
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: SIDEBAR -->
+      <div class="sidebar">
+        <!-- Today Progress -->
+        <div class="section-card">
+          <div class="section-head">
+            <div class="section-title"><span class="dot"></span>Today's Progress</div>
+            <span class="badge green" id="todayBadge">0%</span>
+          </div>
+          <div class="progress-ring-wrap">
+            <div class="progress-ring-container">
+              <svg width="120" height="120" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="50" fill="none" stroke="#1a1a1a" stroke-width="10" />
+                <circle cx="60" cy="60" r="50" fill="none" stroke="#22c55e" stroke-width="10" stroke-linecap="round"
+                  id="progressRingCircle" stroke-dasharray="314" stroke-dashoffset="314"
+                  style="transition:stroke-dashoffset .6s ease" />
+              </svg>
+              <div class="progress-ring-text">
+                <div class="progress-pct" id="progressPct">0%</div>
+                <div class="progress-sub" id="progressSub">0 / 0</div>
+              </div>
+            </div>
+          </div>
+          <div class="week-overview" id="weekOverview"></div>
+        </div>
+
+        <!-- Streak Panel -->
+        <div class="section-card streak-panel">
+          <div class="section-head">
+            <div class="section-title"><span class="dot"></span>Streak</div>
+          </div>
+          <div class="streak-flame">
+            <div style="position:relative">
+              <svg width="36" height="44" viewBox="0 0 36 44" fill="none">
+                <path d="M18 2C18 2 28 12 28 22C28 30 23 38 18 42C13 38 8 30 8 22C8 12 18 2 18 2Z" fill="#052e16"
+                  stroke="#22c55e" stroke-width="1.5" />
+                <path d="M18 14C18 14 23 20 23 26C23 30 20.5 34 18 36C15.5 34 13 30 13 26C13 20 18 14 18 14Z"
+                  fill="#22c55e" opacity="0.7" />
+              </svg>
+            </div>
+            <div class="streak-info">
+              <div class="streak-label">Current Streak</div>
+              <div class="streak-num" id="sidebarStreak">0</div>
+              <div class="streak-desc" id="sidebarStreakDesc">Start completing tasks!</div>
+            </div>
+          </div>
+          <div class="streak-bars" id="streakBars"></div>
+          <div
+            style="padding:8px 18px 14px;display:flex;justify-content:space-between;font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace">
+            <span>Last 30 days</span>
+            <span id="streakOf30">0/30</span>
+          </div>
+        </div>
+
+        <!-- Upcoming repeating tasks -->
+        <div class="section-card">
+          <div class="section-head">
+            <div class="section-title"><span class="dot"></span>Repeating Tasks</div>
+            <span class="badge green" id="repeatCount">0</span>
+          </div>
+          <div class="section-body" id="repeatList" style="padding-top:10px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOOLTIP -->
+  <div class="hm-tooltip" id="hmTooltip"></div>
+
+  <!-- ADD TASK MODAL -->
+  <div class="modal-overlay" id="addModal" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title" id="modalTitle">Add New Task</div>
+        <div class="modal-close" onclick="closeModal()">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+          </svg>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="form-field" style="margin-bottom:14px">
+          <div class="form-label">Task Name</div>
+          <input class="input" id="modalTaskName" placeholder="Enter task name..."
+            onkeydown="if(event.key==='Enter')saveModalTask()">
+        </div>
+        <div class="form-row" style="margin-bottom:14px">
+          <div class="form-field">
+            <div class="form-label">Applies to</div>
+            <select class="input" id="modalScope">
+              <option value="day">This day only</option>
+              <option value="week" selected>This week</option>
+              <option value="always">All weeks</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-bottom:14px">
+          <div class="form-label" style="margin-bottom:8px">Repeat Pattern</div>
+          <div class="repeat-options" id="repeatOptions">
+            <div class="repeat-opt active" data-val="none" onclick="selectRepeat(this)">None</div>
+            <div class="repeat-opt" data-val="weekly" onclick="selectRepeat(this)">Weekly</div>
+            <div class="repeat-opt" data-val="daily" onclick="selectRepeat(this)">Daily</div>
+          </div>
+        </div>
+        <div class="form-field" style="margin-bottom:14px">
+          <div class="form-label">Tag (optional)</div>
+          <input class="input" id="modalTag" placeholder="e.g. health, work, personal">
+        </div>
+        <div class="modal-actions">
+          <button class="btn" onclick="closeModal()">Cancel</button>
+          <button class="btn primary" onclick="saveModalTask()">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M1 6l4 4 6-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+            Save Task
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHEER OVERLAY -->
+  <div class="cheer-overlay" id="cheerOverlay"></div>
+  <div class="cheer-banner" id="cheerBanner">
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:4px">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <path d="M14 3C14 3 24 11 24 18C24 23.5 19.5 27 14 27C8.5 27 4 23.5 4 18C4 11 14 3 14 3Z" fill="#052e16"
+          stroke="#22c55e" stroke-width="1.8" />
+        <path d="M14 10C14 10 19 15 19 19C19 22 16.8 25 14 25C11.2 25 9 22 9 19C9 15 14 10 14 10Z" fill="#22c55e"
+          opacity="0.8" />
+      </svg>
+      <h2 style="margin:0">On Fire!</h2>
+    </div>
+    <p>You're on an incredible streak</p>
+    <span class="cheer-streak-num" id="cheerNum">0</span>
+    <p style="margin-top:4px">days in a row</p>
+    <button class="btn primary" style="margin-top:16px;width:100%;justify-content:center" onclick="closeCheer()">Keep
+      Going</button>
+  </div>
+
+  <script>
+    // ── DATA ── 
+    const APP_START = new Date(2026, 2, 1); // Mar 1 2026 — heatmap starts here
+    const APP_END = new Date(2028, 11, 31);
+    const TODAY = new Date(2026, 3, 1); // Simulated today = Apr 1 2026
+
+    // Pre-fill streak days — Mar 29, 30, 31, Apr 1 (4 consecutive days)
+    const PRE_FILLED_DATES = ['2026-03-29', '2026-03-30', '2026-03-31', '2026-04-01'];
+
+    let state = {
+      tasks: [],       // {id,name,scope,repeat,tag,weekKey,dayIdx,created}
+      completions: {}, // { 'YYYY-MM-DD': { taskId: bool } }
+      editingTask: null
+    };
+
+    // ── LOAD/SAVE ──
+    function save() { try { localStorage.setItem('strk_state', JSON.stringify(state)) } catch (e) { } }
+    function load() {
+      try {
+        const d = localStorage.getItem('strk_state');
+        if (d) { state = JSON.parse(d) }
+        else { initDefaults(); }
+      } catch (e) { initDefaults(); }
+      // Always ensure pre-filled dates are marked as completed
+      PRE_FILLED_DATES.forEach(d => {
+        if (!state.completions[d]) state.completions[d] = { _dayDone: true };
+        else state.completions[d]._dayDone = true;
+      });
+    }
+    function initDefaults() {
+      // Default sample tasks for current week
+      const wk = getWeekKey(TODAY);
+      state.tasks = [
+        { id: uid(), name: 'Morning workout', scope: 'week', repeat: 'weekly', tag: 'health', weekKey: wk, dayIdx: -1, created: Date.now() },
+        { id: uid(), name: 'Read for 20 minutes', scope: 'week', repeat: 'weekly', tag: 'learning', weekKey: wk, dayIdx: -1, created: Date.now() },
+        { id: uid(), name: 'Review day goals', scope: 'week', repeat: 'daily', tag: 'focus', weekKey: wk, dayIdx: -1, created: Date.now() },
+      ];
+    }
+
+    // ── UTILS ──
+    function uid() { return Math.random().toString(36).slice(2, 10) }
+    function dateStr(d) { return d.toISOString().slice(0, 10) }
+    function getWeekKey(d) {
+      const monday = getMonday(d);
+      return dateStr(monday);
+    }
+    function getMonday(d) {
+      const dt = new Date(d);
+      const day = dt.getDay() || 7;
+      if (day !== 1) dt.setDate(dt.getDate() - day + 1);
+      dt.setHours(0, 0, 0, 0);
+      return dt;
+    }
+    function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r }
+    function formatDate(d) { return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) }
+    function sameDay(a, b) { return dateStr(a) === dateStr(b) }
+
+    const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    let currentWeekOffset = 0;
+    let selectedDayIdx = 0; // 0=Mon..6=Sun relative to current week monday
+
+    // ── WEEK CALCULATION ──
+    function getCurrentWeekMonday() {
+      return addDays(getMonday(TODAY), currentWeekOffset * 7);
+    }
+    function getCurrentWeekKey() {
+      return getWeekKey(getCurrentWeekMonday());
+    }
+    function getWeekDays() {
+      const mon = getCurrentWeekMonday();
+      return Array.from({ length: 7 }, (_, i) => addDays(mon, i));
+    }
+    function getSelectedDay() {
+      return getWeekDays()[selectedDayIdx];
+    }
+
+    // ── TASKS FOR DAY ──
+    function getTasksForDay(dayDate) {
+      const weekKey = getWeekKey(dayDate);
+      const todayStr = dateStr(dayDate);
+      const weekMonday = getMonday(dayDate);
+      const dayOfWeek = ((dayDate.getDay() || 7) - 1); // 0=Mon
+
+      return state.tasks.filter(t => {
+        if (t.repeat === 'daily') return true;
+        if (t.repeat === 'weekly') {
+          // Show this task if its original week, or any future week
+          const origMon = getMonday(new Date(t.weekKey));
+          return weekMonday >= origMon;
+        }
+        if (t.scope === 'always') return true;
+        if (t.scope === 'week') return t.weekKey === weekKey;
+        if (t.scope === 'day') return t.weekKey === weekKey && t.dayIdx === dayOfWeek;
+        return false;
+      });
+    }
+
+    function isTaskDone(taskId, dayStr) {
+      const c = state.completions[dayStr];
+      return !!(c && c[taskId]);
+    }
+    function toggleTask(taskId, dayStr) {
+      if (!state.completions[dayStr]) state.completions[dayStr] = {};
+      state.completions[dayStr][taskId] = !state.completions[dayStr][taskId];
+      // If all tasks done for that day, mark day
+      const dayDate = new Date(dayStr);
+      const tasks = getTasksForDay(dayDate);
+      if (tasks.length > 0 && tasks.every(t => state.completions[dayStr] && state.completions[dayStr][t.id])) {
+        state.completions[dayStr]._dayDone = true;
+      } else {
+        if (state.completions[dayStr]) state.completions[dayStr]._dayDone = false;
+      }
+      save();
+      renderAll();
+      checkStreak();
+    }
+    function isDayDone(dayStr) {
+      const c = state.completions[dayStr];
+      if (!c) return false;
+      if (c._dayDone) return true;
+      // Also check if pre-filled
+      if (PRE_FILLED_DATES.includes(dayStr)) return true;
+      return false;
+    }
+
+    // ── STREAK ──
+    function calcStreak() {
+      // Walk backwards from TODAY to count the current consecutive streak.
+      // We walk back to as early as the earliest PRE_FILLED_DATE to catch all days.
+      const WALK_BACK_START = new Date(2026, 2, 1); // Mar 1 — safe far-back limit
+      let streak = 0;
+      let d = new Date(TODAY);
+      while (d >= WALK_BACK_START) {
+        const ds = dateStr(d);
+        if (isDayDone(ds)) { streak++; }
+        else break; // first gap stops the streak
+        d = addDays(d, -1);
+      }
+      // Global max streak — scan from earliest possible date to today
+      let gmax = 0, gcur = 0;
+      let dd = new Date(WALK_BACK_START);
+      while (dd <= TODAY) {
+        if (isDayDone(dateStr(dd))) { gcur++; if (gcur > gmax) gmax = gcur; }
+        else gcur = 0;
+        dd = addDays(dd, 1);
+      }
+      const totalActive = [...new Set([
+        ...PRE_FILLED_DATES,
+        ...Object.keys(state.completions).filter(d => isDayDone(d))
+      ])].length;
+      return { streak, maxStreak: Math.max(gmax, streak), totalActive };
+    }
+
+    let lastStreakForCheer = 0;
+    function checkStreak() {
+      const { streak } = calcStreak();
+      if (streak > 30 && streak > lastStreakForCheer) {
+        lastStreakForCheer = streak;
+        showCheer(streak);
+      }
+    }
+
+    // ── RENDER ALL ──
+    function renderAll() {
+      renderHeader();
+      renderDayTabs();
+      renderTaskList();
+      renderStats();
+      renderSidebar();
+      renderWeekOverview();
+      renderRepeatList();
+    }
+
+    function renderHeader() {
+      document.getElementById('currentDateBadge').textContent =
+        TODAY.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    function renderStats() {
+      const { streak, maxStreak, totalActive } = calcStreak();
+      const days = getWeekDays();
+      const weekDone = days.filter(d => isDayDone(dateStr(d))).length;
+      const todayTasks = getTasksForDay(TODAY);
+      const todayStr = dateStr(TODAY);
+      const todayDone = todayTasks.filter(t => isTaskDone(t.id, todayStr)).length;
+
+      document.getElementById('statStreak').textContent = streak;
+      document.getElementById('statMax').textContent = maxStreak;
+      document.getElementById('statTotal').textContent = totalActive;
+      document.getElementById('statWeek').textContent = weekDone + '/7';
+      document.getElementById('statToday').textContent = todayTasks.length;
+      document.getElementById('statTodayDone').textContent = todayDone + ' completed';
+      document.getElementById('hmTotalDays').textContent = totalActive;
+      document.getElementById('hmStreak').textContent = streak;
+      document.getElementById('hmMax').textContent = maxStreak;
+    }
+
+    function renderDayTabs() {
+      const days = getWeekDays();
+      const mon = getCurrentWeekMonday();
+      const label = `Week of ${mon.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`;
+      document.getElementById('weekLabel').textContent = label;
+
+      const cont = document.getElementById('dayTabs');
+      cont.innerHTML = '';
+      days.forEach((day, i) => {
+        const ds = dateStr(day);
+        const tasks = getTasksForDay(day);
+        const done = tasks.filter(t => isTaskDone(t.id, ds)).length;
+        const allDone = tasks.length > 0 && done === tasks.length;
+        const hasTasks = tasks.length > 0;
+        const isToday = sameDay(day, TODAY);
+        const div = document.createElement('div');
+        div.className = 'day-tab' + (i === selectedDayIdx ? ' active' : '') + (hasTasks ? ' has-tasks' : '') + (allDone ? ' completed' : '');
+        div.innerHTML = `<div class="dt-name">${DAY_NAMES[i]}</div><div class="dt-num">${day.getDate()}</div>`;
+        if (isToday) div.style.boxShadow = '0 0 0 1px var(--green)';
+        div.onclick = () => { selectedDayIdx = i; renderDayTabs(); renderTaskList(); };
+        cont.appendChild(div);
+      });
+    }
+
+    function renderTaskList() {
+      const day = getSelectedDay();
+      const dayStr = dateStr(day);
+      const tasks = getTasksForDay(day);
+      const cont = document.getElementById('taskList');
+      cont.innerHTML = '';
+
+      if (tasks.length === 0) {
+        cont.innerHTML = `<div class="no-tasks">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="6" y="4" width="20" height="24" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M11 11h10M11 16h7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <div style="margin-top:8px">No tasks for this day</div>
+    </div>`;
+        return;
+      }
+
+      const done = tasks.filter(t => isTaskDone(t.id, dayStr)).length;
+      const allDone = done === tasks.length;
+
+      tasks.forEach(t => {
+        const isDone = isTaskDone(t.id, dayStr);
+        const div = document.createElement('div');
+        div.className = 'task-item' + (isDone ? ' done' : '');
+        div.innerHTML = `
+      <div class="task-check${isDone ? ' checked' : ''}" onclick="toggleTask('${t.id}','${dayStr}')">
+        ${isDone ? `<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1 5.5l3 3 6-6" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>` : ''}
+      </div>
+      <div class="task-name">${escHtml(t.name)}</div>
+      <div class="task-tags">
+        ${t.tag ? `<span class="task-tag">${escHtml(t.tag)}</span>` : ''}
+        ${t.repeat !== 'none' ? `<span class="task-repeat-badge">${t.repeat}</span>` : ''}
+      </div>
+      <div class="task-actions">
+        <div class="task-act-btn" onclick="editTask('${t.id}')" title="Edit">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M7.5 1.5l2 2-6 6H1.5v-2l6-6z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="task-act-btn del" onclick="deleteTask('${t.id}')" title="Delete">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1 3h9M4 3V1.5h3V3M2.5 3l.5 7h5.5L9 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        </div>
+      </div>`;
+        cont.appendChild(div);
+      });
+
+      if (allDone) {
+        const bar = document.createElement('div');
+        bar.className = 'all-done-bar';
+        bar.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7l4 4 8-8" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> All tasks done for ${DAY_NAMES[selectedDayIdx]}!`;
+        cont.appendChild(bar);
+      }
+
+      // Today progress ring
+      const todayStr = dateStr(TODAY);
+      const todayTasks = getTasksForDay(TODAY);
+      const todayDone = todayTasks.filter(t => isTaskDone(t.id, todayStr)).length;
+      const pct = todayTasks.length > 0 ? Math.round(todayDone / todayTasks.length * 100) : 0;
+      const circumference = 314;
+      const offset = circumference - (circumference * pct / 100);
+      document.getElementById('progressRingCircle').style.strokeDashoffset = offset;
+      document.getElementById('progressPct').textContent = pct + '%';
+      document.getElementById('progressSub').textContent = todayDone + ' / ' + todayTasks.length;
+      document.getElementById('todayBadge').textContent = pct + '%';
+    }
+
+    function renderSidebar() {
+      const { streak, maxStreak } = calcStreak();
+      document.getElementById('sidebarStreak').textContent = streak;
+      document.getElementById('sidebarStreakDesc').textContent =
+        streak === 0 ? 'Complete tasks to start your streak' :
+          streak < 7 ? 'Great start! Keep going' :
+            streak < 30 ? `${30 - streak} more days to unlock cheer!` : 'Incredible consistency!';
+
+      // Streak bars (last 30 days)
+      const bars = document.getElementById('streakBars');
+      bars.innerHTML = '';
+      let on30 = 0;
+      for (let i = 29; i >= 0; i--) {
+        const d = addDays(TODAY, -i);
+        const done = isDayDone(dateStr(d));
+        if (done) on30++;
+        const b = document.createElement('div');
+        b.className = 'streak-bar' + (done ? ' on' : '');
+        if (done) b.style.boxShadow = '0 0 4px rgba(34,197,94,0.3)';
+        bars.appendChild(b);
+      }
+      document.getElementById('streakOf30').textContent = on30 + '/30';
+    }
+
+    function renderWeekOverview() {
+      const days = getWeekDays();
+      const cont = document.getElementById('weekOverview');
+      cont.innerHTML = '';
+      days.forEach((day, i) => {
+        const ds = dateStr(day);
+        const tasks = getTasksForDay(day);
+        const done = tasks.filter(t => isTaskDone(t.id, ds)).length;
+        const pct = tasks.length > 0 ? done / tasks.length : 0;
+        const barH = Math.max(3, Math.round(pct * 40));
+        const cls = pct === 1 ? 'full' : pct > 0 ? 'partial' : '';
+        const div = document.createElement('div');
+        div.className = 'wo-day';
+        div.innerHTML = `
+      <div class="wo-name">${DAY_NAMES[i][0]}</div>
+      <div class="wo-bar-wrap">
+        <div class="wo-bar ${cls}" style="height:${barH}px" title="${DAY_NAMES[i]}: ${done}/${tasks.length}"></div>
+      </div>
+      <div class="wo-pct">${tasks.length ? Math.round(pct * 100) + '%' : '-'}</div>`;
+        cont.appendChild(div);
+      });
+    }
+
+    function renderRepeatList() {
+      const repeating = state.tasks.filter(t => t.repeat !== 'none');
+      document.getElementById('repeatCount').textContent = repeating.length;
+      const cont = document.getElementById('repeatList');
+      if (repeating.length === 0) {
+        cont.innerHTML = `<div class="no-tasks" style="padding:16px 0;font-size:12px;color:var(--text3)">No repeating tasks yet</div>`;
+        return;
+      }
+      cont.innerHTML = '';
+      repeating.forEach(t => {
+        const div = document.createElement('div');
+        div.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)';
+        div.innerHTML = `
+      <div style="width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0"></div>
+      <div style="flex:1;font-size:13px;color:var(--text2)">${escHtml(t.name)}</div>
+      <span class="task-repeat-badge">${t.repeat}</span>`;
+        cont.appendChild(div);
+      });
+    }
+
+    // ── HEATMAP ──
+    function buildHeatmap() {
+      const inner = document.getElementById('heatmapInner');
+      inner.innerHTML = '';
+
+      // Build week columns from APP_START to APP_END
+      const start = new Date(APP_START);
+      // Align to Monday
+      while (start.getDay() !== 1) start.setDate(start.getDate() - 1);
+      const end = new Date(APP_END);
+
+      // Collect all weeks
+      let weeks = [];
+      let d = new Date(start);
+      while (d <= end) {
+        const week = [];
+        for (let i = 0; i < 7; i++) {
+          week.push(new Date(d));
+          d.setDate(d.getDate() + 1);
+        }
+        weeks.push(week);
+      }
+
+      // Month labels row
+      const monthRow = document.createElement('div');
+      monthRow.className = 'hm-months';
+      monthRow.style.cssText = 'display:flex;margin-bottom:4px;margin-left:28px;gap:3px';
+
+      let lastMonth = -1;
+      weeks.forEach((week) => {
+        const mon = week[0];
+        const monthIdx = mon.getMonth();
+        const span = document.createElement('div');
+        span.style.cssText = 'width:15px;flex-shrink:0';
+        if (monthIdx !== lastMonth && mon >= APP_START) {
+          span.className = 'hm-month-label';
+          span.textContent = MONTH_NAMES[monthIdx];
+          span.style.width = 'auto';
+          span.style.minWidth = '28px';
+          lastMonth = monthIdx;
+        }
+        monthRow.appendChild(span);
+      });
+
+      // Day labels
+      const rowsWrap = document.createElement('div');
+      rowsWrap.className = 'hm-rows';
+
+      const dayLabels = document.createElement('div');
+      dayLabels.className = 'hm-day-labels';
+      ['Mon', '', 'Wed', '', 'Fri', '', 'Sun'].forEach(l => {
+        const d2 = document.createElement('div');
+        d2.className = 'hm-day-lbl';
+        d2.textContent = l;
+        dayLabels.appendChild(d2);
+      });
+
+      const cols = document.createElement('div');
+      cols.className = 'hm-cols';
+
+      weeks.forEach(week => {
+        const col = document.createElement('div');
+        col.className = 'hm-col';
+        let isTodayCol = false;
+        week.forEach(day => {
+          const cell = document.createElement('div');
+          const ds = dateStr(day);
+          const future = day > TODAY;
+          const done = isDayDone(ds);
+          let lvl = 0;
+          if (!future && done) {
+            // Pre-filled days always show full green
+            if (PRE_FILLED_DATES.includes(ds)) { lvl = 4; }
+            else {
+              const tasks = getTasksForDay(day);
+              if (tasks.length === 0) lvl = 1;
+              else {
+                const doneCount = tasks.filter(t => isTaskDone(t.id, ds)).length;
+                const r = doneCount / tasks.length;
+                lvl = r >= 1 ? 4 : r >= 0.66 ? 3 : r >= 0.33 ? 2 : 1;
+              }
+            }
+          }
+          if (sameDay(day, TODAY)) isTodayCol = true;
+          cell.className = 'hm-cell' + (future ? ' future' : ' l' + lvl) + (sameDay(day, TODAY) ? ' today-cell' : '');
+          cell.setAttribute('data-date', ds);
+
+          // Tooltip
+          const tooltip = document.getElementById('hmTooltip');
+          cell.addEventListener('mousemove', e => {
+            if (future) { tooltip.style.display = 'none'; return }
+            const dayName = day.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+            const tasks = getTasksForDay(day);
+            const doneC = tasks.filter(t => isTaskDone(t.id, ds)).length;
+            tooltip.textContent = `${dayName} — ${PRE_FILLED_DATES.includes(ds) ? 'Completed' : tasks.length === 0 ? 'No tasks' : `${doneC}/${tasks.length} done`}`;
+            tooltip.style.display = 'block';
+            tooltip.style.left = (e.clientX + 12) + 'px';
+            tooltip.style.top = (e.clientY - 28) + 'px';
+          });
+          cell.addEventListener('mouseleave', () => tooltip.style.display = 'none');
+          col.appendChild(cell);
+        });
+        if (isTodayCol) col.setAttribute('data-today-col', '1');
+        cols.appendChild(col);
+      });
+
+      rowsWrap.appendChild(dayLabels);
+      rowsWrap.appendChild(cols);
+
+      // Month row — show all months from APP_START
+      const simpleMRow = document.createElement('div');
+      simpleMRow.style.cssText = 'display:flex;margin-bottom:4px;margin-left:28px;overflow:hidden;gap:3px';
+      let lm = -1;
+      weeks.forEach(w => {
+        const mn = w[0].getMonth();
+        const yr = w[0].getFullYear();
+        const lbl = document.createElement('div');
+        lbl.style.cssText = 'width:15px;height:14px;flex-shrink:0;font-size:10px;color:var(--text3);font-family:JetBrains Mono,monospace;overflow:visible;white-space:nowrap';
+        const key = yr * 100 + mn;
+        if (key !== lm) {
+          lbl.textContent = MONTH_NAMES[mn] + ' ' + yr.toString().slice(2);
+          lm = key;
+        }
+        simpleMRow.appendChild(lbl);
+      });
+
+      inner.appendChild(simpleMRow);
+      inner.appendChild(rowsWrap);
+
+      // Auto-scroll heatmap so "today" column is visible, offset slightly left
+      setTimeout(() => {
+        const scroll = document.querySelector('.heatmap-scroll');
+        const todayCol = cols.querySelector('[data-today-col]');
+        if (scroll && todayCol) {
+          const colLeft = todayCol.offsetLeft;
+          const scrollWidth = scroll.clientWidth;
+          scroll.scrollLeft = Math.max(0, colLeft - scrollWidth * 0.65);
+        }
+      }, 80);
+    }
+
+    // ── MODAL ──
+    let selectedRepeat = 'none';
+
+    function openAddModal(taskId) {
+      state.editingTask = taskId || null;
+      const modal = document.getElementById('addModal');
+      document.getElementById('modalTitle').textContent = taskId ? 'Edit Task' : 'Add New Task';
+      if (taskId) {
+        const t = state.tasks.find(x => x.id === taskId);
+        document.getElementById('modalTaskName').value = t.name;
+        document.getElementById('modalScope').value = t.scope;
+        document.getElementById('modalTag').value = t.tag || '';
+        selectedRepeat = t.repeat || 'none';
+      } else {
+        document.getElementById('modalTaskName').value = '';
+        document.getElementById('modalScope').value = 'week';
+        document.getElementById('modalTag').value = '';
+        selectedRepeat = 'none';
+      }
+      document.querySelectorAll('.repeat-opt').forEach(el => {
+        el.classList.toggle('active', el.dataset.val === selectedRepeat);
+      });
+      modal.classList.add('open');
+      setTimeout(() => document.getElementById('modalTaskName').focus(), 100);
+    }
+    function closeModal() { document.getElementById('addModal').classList.remove('open') }
+    function editTask(id) { openAddModal(id) }
+    function deleteTask(id) {
+      if (confirm('Delete this task?')) {
+        state.tasks = state.tasks.filter(t => t.id !== id);
+        save(); renderAll(); buildHeatmap();
+      }
+    }
+    function selectRepeat(el) {
+      selectedRepeat = el.dataset.val;
+      document.querySelectorAll('.repeat-opt').forEach(e => e.classList.remove('active'));
+      el.classList.add('active');
+    }
+    function saveModalTask() {
+      const name = document.getElementById('modalTaskName').value.trim();
+      if (!name) return;
+      const scope = document.getElementById('modalScope').value;
+      const tag = document.getElementById('modalTag').value.trim();
+      const weekKey = getCurrentWeekKey();
+
+      if (state.editingTask) {
+        const t = state.tasks.find(x => x.id === state.editingTask);
+        if (t) { t.name = name; t.scope = scope; t.repeat = selectedRepeat; t.tag = tag; }
+      } else {
+        state.tasks.push({
+          id: uid(), name, scope, repeat: selectedRepeat, tag,
+          weekKey, dayIdx: selectedDayIdx, created: Date.now()
+        });
+      }
+      save(); closeModal(); renderAll(); buildHeatmap();
+    }
+
+    // ── INLINE FORM ──
+    function toggleInlineForm(show) {
+      document.getElementById('inlineForm').style.display = show ? 'flex' : 'none';
+      document.getElementById('addInlineBtn').style.display = show ? 'none' : 'flex';
+      if (show) setTimeout(() => document.getElementById('inlineTaskName').focus(), 50);
+    }
+    function saveInlineTask() {
+      const name = document.getElementById('inlineTaskName').value.trim();
+      if (!name) return;
+      const scope = document.getElementById('inlineScope').value;
+      const repeat = document.getElementById('inlineRepeat').value;
+      const weekKey = getCurrentWeekKey();
+      state.tasks.push({ id: uid(), name, scope, repeat, tag: '', weekKey, dayIdx: selectedDayIdx, created: Date.now() });
+      document.getElementById('inlineTaskName').value = '';
+      save(); toggleInlineForm(false); renderAll(); buildHeatmap();
+    }
+
+    // ── WEEK NAV ──
+    function changeWeek(dir) {
+      if (dir === 0) { currentWeekOffset = 0; }
+      else currentWeekOffset += dir;
+      renderAll();
+    }
+
+    // ── CHEER ──
+    function showCheer(streak) {
+      const overlay = document.getElementById('cheerOverlay');
+      const banner = document.getElementById('cheerBanner');
+      document.getElementById('cheerNum').textContent = streak;
+      overlay.classList.add('active');
+      banner.classList.add('show');
+
+      // Particles
+      overlay.innerHTML = '';
+      const colors = ['#22c55e', '#16a34a', '#4ade80', '#86efac', '#dcfce7'];
+      for (let i = 0; i < 60; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+        const tx = (Math.random() - 0.5) * 400;
+        const ty = -(Math.random() * 400 + 100);
+        const size = Math.random() * 8 + 4;
+        p.style.cssText = `left:${x}px;top:${y}px;width:${size}px;height:${size}px;background:${colors[i % colors.length]};
+      --tx:${tx}px;--ty:${ty}px;animation-delay:${Math.random() * 0.5}s;animation-duration:${1.5 + Math.random()}s`;
+        overlay.appendChild(p);
+      }
+    }
+    function closeCheer() {
+      document.getElementById('cheerOverlay').classList.remove('active');
+      document.getElementById('cheerBanner').classList.remove('show');
+    }
+
+    // ── ESCAPE HTML ──
+    function escHtml(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }
+
+    // ── INIT ──
+    load();
+
+    // Set selected day to today's day of week (within current week)
+    const todayDayOfWeek = ((TODAY.getDay() || 7) - 1);
+    if (currentWeekOffset === 0) selectedDayIdx = todayDayOfWeek;
+
+    renderAll();
+    buildHeatmap();
+    checkStreak();
+  </script>
+</body>
+
+</html>

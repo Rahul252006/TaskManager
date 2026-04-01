@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strk — Full Stack Task Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0 }
+        :root {
+            --bg: #080808;
+            --bg2: #0f0f0f;
+            --bg3: #161616;
+            --bg4: #1e1e1e;
+            --bg5: #252525;
+            --green: #22c55e;
+            --green-dim: #16a34a;
+            --green-dark: #052e16;
+            --green-glow: rgba(34, 197, 94, 0.15);
+            --green1: rgba(34, 197, 94, 0.15);
+            --green2: rgba(34, 197, 94, 0.35);
+            --green3: rgba(34, 197, 94, 0.6);
+            --green4: #22c55e;
+            --border: #1f1f1f;
+            --border2: #2a2a2a;
+            --border3: #333;
+            --text: #f2f2f2;
+            --text2: #a0a0a0;
+            --text3: #555;
+            --red: #ef4444;
+            --r: 8px;
+            --r2: 12px;
+            --r3: 16px;
+            --gradient: linear-gradient(135deg, #22c55e, #06b6d4);
+        }
+
+        html, body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Syne', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden
+        }
+
+        ::-webkit-scrollbar { width: 4px; height: 4px }
+        ::-webkit-scrollbar-track { background: var(--bg2) }
+        ::-webkit-scrollbar-thumb { background: var(--border3); border-radius: 2px }
+
+        /* ── AUTH SCREEN ── */
+        #authScreen {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .auth-card {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            width: 100%;
+            max-width: 400px;
+            border-radius: var(--r3);
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            animation: authIn 0.4s ease-out;
+        }
+        @keyframes authIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .auth-tabs {
+            display: flex; gap: 10px; margin-bottom: 25px;
+            border-bottom: 1px solid var(--border); padding-bottom: 10px;
+        }
+        .auth-tab { cursor: pointer; color: var(--text3); font-weight: 600; font-size: 14px; transition: color 0.2s; }
+        .auth-tab.active { color: var(--green); }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 11px; text-transform: uppercase; color: var(--text3); margin-bottom: 5px; letter-spacing: 1px; }
+        input.auth-input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); padding: 12px; color: var(--text); border-radius: var(--r); outline: none; font-family: inherit; }
+        input.auth-input:focus { border-color: var(--green); }
+        .err-msg { color: var(--red); font-size: 12px; margin-bottom: 10px; min-height: 18px; }
+
+        /* ── LAYOUT ── */
+        .app { max-width: 1100px; margin: 0 auto; padding: 16px; display: none; }
+
+        /* ── HEADER ── */
+        .header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 18px 0 18px; border-bottom: 1px solid var(--border);
+            margin-bottom: 20px; gap: 12px; flex-wrap: wrap
+        }
+        .brand { display: flex; align-items: center; gap: 10px }
+        .brand-icon {
+            width: 32px; height: 32px; background: var(--green-dark);
+            border: 1px solid var(--green-dim); border-radius: var(--r);
+            display: flex; align-items: center; justify-content: center
+        }
+        .brand-name { font-size: 20px; font-weight: 800; letter-spacing: -0.5px }
+        .brand-name span { color: var(--green) }
+        .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap }
+        .date-badge { background: var(--bg3); border: 1px solid var(--border2); border-radius: 20px; padding: 5px 14px; font-size: 12px; color: var(--text2); font-family: 'JetBrains Mono', monospace; letter-spacing: 0.3px }
+        .btn {
+            display: inline-flex; align-items: center; gap: 7px; padding: 8px 16px;
+            border-radius: var(--r); border: 1px solid var(--border3); background: var(--bg3);
+            color: var(--text); font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 500;
+            cursor: pointer; transition: all .18s ease; white-space: nowrap
+        }
+        .btn:hover { border-color: var(--green-dim); background: var(--bg4); color: var(--green) }
+        .btn.primary { background: var(--green-dark); border-color: var(--green-dim); color: var(--green) }
+        .btn.primary:hover { background: var(--green-dim); color: #fff }
+        .btn.logout { border-color: var(--red); color: var(--red); background: transparent; }
+        .btn.logout:hover { background: var(--red); color: #fff; }
+
+        /* ── STATS ROW ── */
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 20px }
+        .stat-card {
+            background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--r2);
+            padding: 14px 16px; position: relative; overflow: hidden; transition: border-color .2s
+        }
+        .stat-card:hover { border-color: var(--border3) }
+        .stat-card.highlight { border-color: var(--green-dim); background: linear-gradient(135deg, var(--bg3), var(--green-dark)) }
+        .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--green); opacity: 0; transition: .2s }
+        .stat-card.highlight::before { opacity: 1 }
+        .stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px }
+        .stat-value { font-size: 26px; font-weight: 700; letter-spacing: -1px; color: var(--text); font-family: 'JetBrains Mono', monospace }
+        .stat-card.highlight .stat-value { color: var(--green) }
+        .stat-sub { font-size: 11px; color: var(--text3); margin-top: 3px }
+
+        /* ── MAIN GRID ── */
+        .main-grid { display: grid; grid-template-columns: 1fr 340px; gap: 16px }
+        @media(max-width:800px) { .main-grid { grid-template-columns: 1fr } }
+
+        /* ── SECTION CARD ── */
+        .section-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r2); overflow: hidden }
+        .section-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); gap: 8px }
+        .section-title { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px }
+        .section-title .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green) }
+        .section-body { padding: 16px 18px }
+
+        /* ── DAY TABS ── */
+        .day-tabs { display: flex; gap: 4px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 2px }
+        .day-tab {
+            flex: 1; min-width: 44px; text-align: center; padding: 8px 4px; border-radius: var(--r);
+            border: 1px solid var(--border); background: var(--bg3); cursor: pointer;
+            transition: all .15s; font-size: 11px
+        }
+        .day-tab .dt-name { color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; font-size: 10px }
+        .day-tab .dt-num { font-size: 15px; font-weight: 700; margin-top: 2px; font-family: 'JetBrains Mono', monospace; color: var(--text2) }
+        .day-tab.active { border-color: var(--green); background: var(--green-dark) }
+        .day-tab.active .dt-name { color: var(--green-dim) }
+        .day-tab.active .dt-num { color: var(--green) }
+        .day-tab.has-tasks { position: relative }
+        .day-tab.has-tasks::after { content: ''; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: var(--green-dim) }
+        .day-tab.completed::after { background: var(--green); box-shadow: 0 0 4px var(--green) }
+        .day-tab:hover:not(.active) { border-color: var(--border3); background: var(--bg4) }
+
+        /* ── TASK LIST ── */
+        .task-list { display: flex; flex-direction: column; gap: 8px; min-height: 80px }
+        .task-item {
+            display: flex; align-items: center; gap: 10px; padding: 11px 14px; background: var(--bg3);
+            border: 1px solid var(--border); border-radius: var(--r); transition: all .18s; position: relative; animation: taskIn .2s ease
+        }
+        @keyframes taskIn { from { opacity: 0; transform: translateY(-6px) } to { opacity: 1; transform: translateY(0) } }
+        .task-item:hover { border-color: var(--border3) }
+        .task-item.done { opacity: 0.55 }
+        .task-item.done .task-name { text-decoration: line-through; color: var(--text3) }
+        .task-check {
+            width: 20px; height: 20px; border-radius: 5px; border: 1.5px solid var(--border3);
+            background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; transition: all .15s
+        }
+        .task-check:hover { border-color: var(--green-dim) }
+        .task-check.checked { background: var(--green); border-color: var(--green) }
+        .task-name { flex: 1; font-size: 13px; color: var(--text); font-weight: 500; min-width: 0; word-break: break-word }
+        .task-tag { font-size: 10px; padding: 2px 7px; border-radius: 10px; background: var(--bg4); border: 1px solid var(--border2); color: var(--text3); font-family: 'JetBrains Mono', monospace }
+        .task-actions { display: flex; gap: 4px; opacity: 0; transition: .15s }
+        .task-item:hover .task-actions { opacity: 1 }
+        .task-act-btn {
+            width: 24px; height: 24px; border-radius: 5px; border: 1px solid var(--border2);
+            background: var(--bg4); color: var(--text3); display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all .12s; flex-shrink: 0
+        }
+        .task-act-btn:hover { border-color: var(--green-dim); color: var(--green); background: var(--bg5) }
+        .task-act-btn.del:hover { border-color: var(--red); color: var(--red) }
+        .task-repeat-badge { font-size: 9px; padding: 1px 5px; border-radius: 4px; background: var(--green-dark); border: 1px solid var(--green-dim); color: var(--green); font-family: 'JetBrains Mono', monospace; margin-left: 4px; white-space: nowrap }
+        .all-done-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--green-dark); border: 1px solid var(--green-dim); border-radius: var(--r); font-size: 13px; color: var(--green); margin-top: 4px; animation: taskIn .25s ease }
+        .no-tasks { text-align: center; padding: 28px 0; color: var(--text3); font-size: 13px }
+
+        /* ── HEATMAP ── */
+        .heatmap-head { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px }
+        .heatmap-meta { display: flex; gap: 16px; flex-wrap: wrap }
+        .hm-stat { font-size: 12px; color: var(--text2) }
+        .hm-stat strong { color: var(--text); font-weight: 600 }
+        .heatmap-scroll { overflow-x: auto; padding: 16px 18px }
+        .heatmap-inner { display: flex; flex-direction: column; gap: 4px; min-width: 600px }
+        .hm-months { position: relative; height: 16px; margin-bottom: 4px; padding-left: 26px; }
+        .hm-month-label { position: absolute; font-size: 10px; color: var(--text3); font-family: 'JetBrains Mono', monospace; white-space: nowrap; }
+        .hm-rows { display: flex; gap: 4px }
+        .hm-day-labels { display: flex; flex-direction: column; gap: 3px; padding-top: 1px; margin-right: 4px }
+        .hm-day-lbl { font-size: 10px; color: var(--text3); font-family: 'JetBrains Mono', monospace; height: 12px; line-height: 12px; width: 22px; text-align: right }
+        .hm-cols { display: flex; gap: 3px }
+        .hm-col { display: flex; flex-direction: column; gap: 3px }
+        .hm-cell { width: 12px; height: 12px; border-radius: 2px; background: var(--bg4); cursor: pointer; transition: transform .12s, box-shadow .12s; flex-shrink: 0; position: relative }
+        .hm-cell:hover { transform: scale(1.3); z-index: 5 }
+        .hm-cell.l1 { background: var(--green1) }
+        .hm-cell.l2 { background: var(--green2) }
+        .hm-cell.l3 { background: var(--green3) }
+        .hm-cell.l4 { background: var(--green4); box-shadow: 0 0 5px rgba(34,197,94,0.4) }
+        .hm-tooltip { position: fixed; background: var(--bg5); border: 1px solid var(--border3); border-radius: 6px; padding: 6px 10px; font-size: 11px; color: var(--text); font-family: 'JetBrains Mono', monospace; pointer-events: none; z-index: 100; display: none; white-space: nowrap }
+
+        /* ── SIDEBAR ── */
+        .sidebar { display: flex; flex-direction: column; gap: 14px }
+        .progress-ring-wrap { display: flex; align-items: center; justify-content: center; padding: 20px 0 10px }
+        .progress-ring-container { position: relative; width: 120px; height: 120px }
+        .progress-ring-container svg { transform: rotate(-90deg) }
+        .progress-ring-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center }
+        .progress-pct { font-size: 26px; font-weight: 700; background: var(--gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-family: 'JetBrains Mono', monospace; line-height: 1 }
+        .progress-sub { font-size: 10px; color: var(--text3); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px }
+        .week-overview { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; padding: 0 18px 16px }
+        .wo-day { display: flex; flex-direction: column; align-items: center; gap: 4px }
+        .wo-name { font-size: 9px; color: var(--text3); text-transform: uppercase }
+        .wo-bar-wrap { height: 40px; display: flex; align-items: flex-end; width: 100% }
+        .wo-bar { width: 100%; background: var(--border); border-radius: 2px; transition: height .4s ease, background .3s; min-height: 3px }
+        .wo-bar.full { background: var(--green) }
+        .wo-bar.partial { background: var(--green-dim) }
+
+        /* ── STREAK PANEL ── */
+        .streak-flame { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-bottom: 1px solid var(--border) }
+        .streak-num { font-size: 42px; font-weight: 800; color: var(--green); font-family: 'JetBrains Mono', monospace; line-height: 1; letter-spacing: -2px }
+        .streak-info { display: flex; flex-direction: column }
+        .streak-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.7px }
+        .streak-desc { font-size: 12px; color: var(--text2); margin-top: 3px }
+        .streak-bars { padding: 12px 18px; display: flex; gap: 3px }
+        .streak-bar { flex: 1; height: 4px; border-radius: 2px; background: var(--border); transition: background .3s }
+        .streak-bar.on { background: var(--green) }
+
+        /* ── MODAL ── */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(4px); opacity: 0; pointer-events: none; transition: opacity .2s }
+        .modal-overlay.open { opacity: 1; pointer-events: all }
+        .modal { background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--r3); width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; transform: translateY(16px); transition: transform .2s }
+        .modal-overlay.open .modal { transform: translateY(0) }
+        .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--border) }
+        .modal-title { font-size: 15px; font-weight: 700 }
+        .modal-body { padding: 20px }
+        .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 11px; color: var(--text3); margin-bottom: 5px; text-transform: uppercase; }
+        .form-input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); padding: 10px 14px; color: var(--text); border-radius: var(--r); outline: none; font-family: inherit; font-size: 14px; }
+        .form-input:focus { border-color: var(--green); }
+
+        .repeat-options { display: flex; gap: 6px; flex-wrap: wrap }
+        .repeat-opt { padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border2); background: var(--bg3); color: var(--text2); font-size: 12px; cursor: pointer; transition: all .14s }
+        .repeat-opt.active { border-color: var(--green); background: var(--green-dark); color: var(--green) }
+    </style>
+</head>
+<body>
+
+    <!-- AUTH SCREEN -->
+    <div id="authScreen">
+        <div class="auth-card">
+            <h1 style="margin-bottom: 10px; font-size: 24px; font-weight: 800;">Str<span style="color:var(--green)">k</span></h1>
+            <p style="color: var(--text3); font-size: 14px; margin-bottom: 25px;">Track consistency with streaks.</p>
+
+            <div class="auth-tabs">
+                <div class="auth-tab active" id="loginTabBtn" onclick="toggleAuthTab('login')">LOGIN</div>
+                <div class="auth-tab" id="signupTabBtn" onclick="toggleAuthTab('signup')">SIGN UP</div>
+            </div>
+
+            <div id="authError" class="err-msg"></div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="loginEmail" class="auth-input" placeholder="you@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" class="auth-input" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn primary" style="width:100%; justify-content:center; padding: 12px;">LOGIN</button>
+            </form>
+
+            <form id="signupForm" style="display: none;">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="signupEmail" class="auth-input" placeholder="you@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Create Password</label>
+                    <input type="password" id="signupPassword" class="auth-input" placeholder="Min 6 characters" required>
+                </div>
+                <button type="submit" class="btn primary" style="width:100%; justify-content:center; padding: 12px;">GET STARTED</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div class="app" id="app">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="brand">
+                <div class="brand-icon">
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                        <path d="M3 9L7 13L15 5" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+                <div>
+                    <div class="brand-name">Str<span>k</span></div>
+                    <div id="userEmailDisplay" style="font-size:10px;color:var(--text3);letter-spacing:0.5px;text-transform:uppercase">Not logged in</div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="date-badge" id="currentDateBadge"></div>
+                <button class="btn" style="border-color:var(--border3);color:var(--text3)" onclick="resetData()">Reset Data</button>
+                <button class="btn primary" onclick="openAddModal()">
+                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+                    Add Task
+                </button>
+                <button class="btn logout" onclick="logout()">
+                    Logout
+                </button>
+            </div>
+        </div>
+
+        <!-- STATS ROW -->
+        <div class="stats-row" id="statsRow">
+            <div class="stat-card highlight">
+                <div class="stat-label">Current Streak</div>
+                <div class="stat-value" id="statStreak">0</div>
+                <div class="stat-sub">days in a row</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Max Streak</div>
+                <div class="stat-value" id="statMax">0</div>
+                <div class="stat-sub">personal best</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Active</div>
+                <div class="stat-value" id="statTotal">0</div>
+                <div class="stat-sub">days completed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">This Week</div>
+                <div class="stat-value" id="statWeek">0/7</div>
+                <div class="stat-sub">days done</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Tasks Today</div>
+                <div class="stat-value" id="statToday">0</div>
+                <div class="stat-sub" id="statTodayDone">0 completed</div>
+            </div>
+        </div>
+
+        <!-- HEATMAP -->
+        <div class="section-card" style="margin-bottom:16px">
+            <div class="heatmap-head">
+                <div>
+                    <div class="section-title"><span class="dot"></span>Activity Heatmap</div>
+                    <div class="heatmap-meta" style="margin-top:5px">
+                        <span class="hm-stat"><strong id="hmTotalDays">0</strong> active days</span>
+                        <span class="hm-stat">Streak <strong id="hmStreak">0</strong></span>
+                    </div>
+                </div>
+                <div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace">Activity History</div>
+            </div>
+            <div class="heatmap-scroll">
+                <div class="heatmap-inner" id="heatmapInner"></div>
+            </div>
+        </div>
+
+        <!-- MAIN GRID -->
+        <div class="main-grid">
+            <div style="display:flex;flex-direction:column;gap:14px">
+                <div class="section-card">
+                    <div class="section-head">
+                        <div class="section-title"><span class="dot"></span>Weekly Tasks</div>
+                        <div style="display:flex;align-items:center;gap:6px">
+                            <div class="week-nav-btns">
+                                <div class="icon-btn" onclick="changeWeek(-1)" title="Previous week">
+                                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M8 2L4 6.5L8 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                                </div>
+                                <div class="icon-btn" onclick="changeWeek(0)" title="Current week" style="font-size:9px;font-family:'JetBrains Mono',monospace;width:36px;color:var(--text3)">NOW</div>
+                                <div class="icon-btn" onclick="changeWeek(1)" title="Next week">
+                                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M5 2L9 6.5L5 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="week-label" id="weekLabel" style="margin-bottom:12px;font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace"></div>
+                        <div class="day-tabs" id="dayTabs"></div>
+                        <div class="task-list" id="taskList"></div>
+                        
+                        <!-- Quick Add Inline -->
+                        <div id="inlineForm" style="display:none; margin-top:15px; padding-top:15px; border-top:1px solid var(--border); flex-direction:column; gap:10px;">
+                            <div class="input-group">
+                                <label>Task Name</label>
+                                <input type="text" id="inlineTaskName" class="form-input" placeholder="Quickly add a task..." onkeydown="if(event.key==='Enter')saveInlineTask()">
+                            </div>
+                            <div style="display:flex; gap:8px; justify-content:flex-end;">
+                                <button class="btn" onclick="toggleInlineForm(false)">Cancel</button>
+                                <button class="btn primary" onclick="saveInlineTask()">Add Task</button>
+                            </div>
+                        </div>
+                        <button id="addInlineBtn" class="btn" style="width:100%; justify-content:center; margin-top:15px; border-style:dashed; color:var(--text3);" onclick="toggleInlineForm(true)">
+                            + Quick Add Task
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="section-card">
+                    <div class="section-head">
+                        <div class="section-title"><span class="dot"></span>Today's Progress</div>
+                    </div>
+                    <div class="progress-ring-wrap">
+                        <div class="progress-ring-container">
+                            <svg width="120" height="120" viewBox="0 0 120 120">
+                                <defs>
+                                    <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="#22c55e" />
+                                        <stop offset="100%" stop-color="#06b6d4" />
+                                    </linearGradient>
+                                </defs>
+                                <circle cx="60" cy="60" r="50" fill="none" stroke="#1a1a1a" stroke-width="10" />
+                                <circle id="progressRingCircle" cx="60" cy="60" r="50" fill="none" stroke="url(#ringGradient)" stroke-width="10" stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="314" style="transition:stroke-dashoffset .6s ease" />
+                            </svg>
+                            <div class="progress-ring-text">
+                                <div class="progress-pct" id="progressPctText">0%</div>
+                                <div class="progress-sub" id="progressSubText">0 / 0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="week-overview" id="weekOverview"></div>
+                </div>
+
+                <div class="section-card">
+                    <div class="section-head"><div class="section-title"><span class="dot"></span>Streak</div></div>
+                    <div class="streak-flame">
+                        <div class="streak-info">
+                            <div class="streak-label">Current Streak</div>
+                            <div class="streak-num" id="sidebarStreak">0</div>
+                            <div class="streak-desc" id="sidebarStreakDesc">Stay consistent!</div>
+                        </div>
+                    </div>
+                    <div class="streak-bars" id="streakBars"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALS -->
+    <div class="modal-overlay" id="addModal" onclick="if(event.target===this)closeModal()">
+        <div class="modal">
+            <div class="modal-head">
+                <div class="modal-title" id="modalTitle">New Task</div>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label>Task Name</label>
+                    <input type="text" id="modalTaskName" class="form-input" placeholder="What needs to be done?">
+                </div>
+                <div class="input-group">
+                    <label>Tag (Optional)</label>
+                    <input type="text" id="modalTag" class="form-input" placeholder="e.g. Work, Health">
+                </div>
+                <div class="input-group">
+                    <label>Repeat Pattern</label>
+                    <div class="repeat-options">
+                        <div class="repeat-opt active" data-val="none" onclick="selectRepeat(this)">None</div>
+                        <div class="repeat-opt" data-val="weekly" onclick="selectRepeat(this)">Weekly</div>
+                        <div class="repeat-opt" data-val="daily" onclick="selectRepeat(this)">Daily</div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn" onclick="closeModal()">Cancel</button>
+                    <button class="btn primary" onclick="saveModalTask()">Save Task</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="hm-tooltip" id="hmTooltip"></div>
+
+    <script>
+        // --- GLOBAL STATE ---
+        let token = localStorage.getItem('strk_token');
+        let user = null;
+        let tasks = [];
+        let completions = {}; // { 'YYYY-MM-DD': { taskId1: true, _dayDone: true } }
+        let currentWeekOffset = 0;
+        let selectedDayIdx = (new Date().getDay() || 7) - 1;
+        let selectedRepeat = 'none';
+        let editingTaskId = null;
+
+        const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        // --- AUTH LOGIC ---
+        function toggleAuthTab(type) {
+            document.getElementById('loginForm').style.display = type === 'login' ? 'block' : 'none';
+            document.getElementById('signupForm').style.display = type === 'signup' ? 'block' : 'none';
+            document.getElementById('loginTabBtn').classList.toggle('active', type === 'login');
+            document.getElementById('signupTabBtn').classList.toggle('active', type === 'signup');
+            document.getElementById('authError').textContent = '';
+        }
+
+        async function handleAuth(e, type) {
+            e.preventDefault();
+            const email = document.getElementById(`${type}Email`).value;
+            const password = document.getElementById(`${type}Password`).value;
+            const errEl = document.getElementById('authError');
+
+            try {
+                const res = await fetch(`/api/auth/${type}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Auth failed');
+
+                localStorage.setItem('strk_token', data.token);
+                token = data.token;
+                init();
+            } catch (err) {
+                errEl.textContent = err.message;
+            }
+        }
+
+        document.getElementById('loginForm').onsubmit = (e) => handleAuth(e, 'login');
+        document.getElementById('signupForm').onsubmit = (e) => handleAuth(e, 'signup');
+
+        function logout() {
+            localStorage.removeItem('strk_token');
+            location.reload();
+        }
+
+        // --- DATE UTILS ---
+        function dateStr(d) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+        function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
+        function getMonday(d) {
+            const dt = new Date(d);
+            const day = dt.getDay() || 7;
+            if (day !== 1) dt.setDate(dt.getDate() - day + 1);
+            dt.setHours(0, 0, 0, 0);
+            return dt;
+        }
+
+        function getCurrentWeekMonday() {
+            return addDays(getMonday(new Date()), currentWeekOffset * 7);
+        }
+
+        function getWeekDays() {
+            const mon = getCurrentWeekMonday();
+            return Array.from({ length: 7 }, (_, i) => addDays(mon, i));
+        }
+
+        // --- DATA FETCHING ---
+        async function fetchData() {
+            if (!token) return;
+            try {
+                // Fetch user
+                const userRes = await fetch('/api/auth/me', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (userRes.status === 401) return logout();
+                user = await userRes.json();
+                document.getElementById('userEmailDisplay').textContent = user.email;
+
+                // Fetch tasks
+                const tasksRes = await fetch('/api/tasks', { headers: { 'Authorization': `Bearer ${token}` } });
+                tasks = await tasksRes.json();
+
+                // Fetch completions
+                const compRes = await fetch('/api/completions', { headers: { 'Authorization': `Bearer ${token}` } });
+                completions = await compRes.json();
+
+                renderAll();
+            } catch (err) {
+                console.error('Fetch error:', err);
+            }
+        }
+
+        // --- TASK CORE LOGIC ---
+        function getTasksForDay(dayDate) {
+            const monday = getMonday(dayDate);
+            const monStr = dateStr(monday);
+            const dayIdx = (dayDate.getDay() || 7) - 1;
+
+            return tasks.filter(t => {
+                if (t.repeat === 'daily') return true;
+                if (t.repeat === 'weekly') {
+                    return getMonday(new Date(t.created)) <= monday;
+                }
+                // One-off tasks
+                if (t.weekKey === monStr) {
+                    if (t.scope === 'week') return true;
+                    if (t.scope === 'day') return t.dayIdx === dayIdx;
+                }
+                return false;
+            });
+        }
+
+        async function toggleTask(taskId, dStr) {
+            const isCurrentlyDone = !!(completions[dStr] && completions[dStr][taskId]);
+            const dayDate = new Date(dStr);
+            const tasksOfNextState = getTasksForDay(dayDate);
+            
+            // Check if this action will complete the day
+            const willBeDoneCount = tasksOfNextState.filter(t => {
+                const alreadyDone = !!(completions[dStr] && completions[dStr][t.taskId]);
+                if (t.taskId === taskId) return !isCurrentlyDone;
+                return alreadyDone;
+            }).length;
+            const dayDone = (willBeDoneCount > 0 && willBeDoneCount === tasksOfNextState.length);
+
+            try {
+                const res = await fetch('/api/completions/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ date: dStr, taskId, value: !isCurrentlyDone, dayDone })
+                });
+                const updated = await res.json();
+                completions[dStr] = updated[dStr];
+                renderAll();
+                
+                // If the day just became done, maybe show a small cheer?
+                if (dayDone && !isCurrentlyDone) {
+                    confetti();
+                }
+            } catch (err) {
+                console.error('Toggle error:', err);
+            }
+        }
+
+        function confetti() {
+            // Simple visual feedback could be added here
+            console.log("Day Complete! 🎉");
+        }
+
+        // --- MODAL LOGIC ---
+        function openAddModal(taskId = null) {
+            editingTaskId = taskId;
+            const modal = document.getElementById('addModal');
+            document.getElementById('modalTitle').textContent = taskId ? 'Edit Task' : 'New Task';
+            
+            if (taskId) {
+                const t = tasks.find(x => x.taskId === taskId);
+                document.getElementById('modalTaskName').value = t.name;
+                document.getElementById('modalTag').value = t.tag || '';
+                selectedRepeat = t.repeat;
+            } else {
+                document.getElementById('modalTaskName').value = '';
+                document.getElementById('modalTag').value = '';
+                selectedRepeat = 'none';
+            }
+            
+            updateRepeatUI();
+            modal.classList.add('open');
+        }
+
+        function closeModal() {
+            document.getElementById('addModal').classList.remove('open');
+        }
+
+        function selectRepeat(el) {
+            selectedRepeat = el.dataset.val;
+            updateRepeatUI();
+        }
+
+        function updateRepeatUI() {
+            document.querySelectorAll('.repeat-opt').forEach(opt => {
+                opt.classList.toggle('active', opt.dataset.val === selectedRepeat);
+            });
+        }
+
+        async function saveModalTask() {
+            const name = document.getElementById('modalTaskName').value.trim();
+            const tag = document.getElementById('modalTag').value.trim();
+            if (!name) return;
+
+            const mon = getCurrentWeekMonday();
+            const taskData = {
+                name, tag, repeat: selectedRepeat,
+                scope: 'week', weekKey: dateStr(mon), dayIdx: selectedDayIdx,
+                taskId: editingTaskId || Math.random().toString(36).slice(2, 10)
+            };
+
+            try {
+                const url = editingTaskId ? `/api/tasks/${editingTaskId}` : '/api/tasks';
+                const method = editingTaskId ? 'PUT' : 'POST';
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify(taskData)
+                });
+                if (!res.ok) throw new Error('Save failed');
+                
+                await fetchData();
+                closeModal();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function deleteTask(taskId) {
+            if (!confirm('Delete this task?')) return;
+            try {
+                await fetch(`/api/tasks/${taskId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                await fetchData();
+            } catch (err) {
+                console.error('Delete error:', err);
+            }
+        }
+
+        // --- RENDERING ---
+        function renderAll() {
+            renderHeader();
+            renderStats();
+            renderHeatmap();
+            renderDayTabs();
+            renderTaskList();
+            renderSidebar();
+        }
+
+        function renderHeader() {
+            document.getElementById('currentDateBadge').textContent = 
+                new Date().toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+        }
+
+        function calcStreak() {
+            let streak = 0;
+            let d = new Date();
+            d.setHours(0,0,0,0);
+            
+            while (true) {
+                const s = dateStr(d);
+                if (completions[s] && completions[s]._dayDone) {
+                    streak++;
+                } else {
+                    // If it's today and not done yet, continue checking yesterday
+                    if (s !== dateStr(new Date())) break;
+                }
+                d = addDays(d, -1);
+            }
+
+            let max = streak;
+            let totalActive = Object.values(completions).filter(c => c._dayDone).length;
+            
+            return { current: streak, max, total: totalActive };
+        }
+
+        function renderStats() {
+            const stats = calcStreak();
+            document.getElementById('statStreak').textContent = stats.current;
+            document.getElementById('statMax').textContent = stats.max;
+            document.getElementById('statTotal').textContent = stats.total;
+
+            const days = getWeekDays();
+            const weekDone = days.filter(d => completions[dateStr(d)] && completions[dateStr(d)]._dayDone).length;
+            document.getElementById('statWeek').textContent = `${weekDone}/7`;
+
+            const todayTasks = getTasksForDay(new Date());
+            const todayDone = todayTasks.filter(t => completions[dateStr(new Date())] && completions[dateStr(new Date())][t.taskId]).length;
+            document.getElementById('statToday').textContent = todayTasks.length;
+            document.getElementById('statTodayDone').textContent = `${todayDone} completed`;
+        }
+
+        function renderDayTabs() {
+            const container = document.getElementById('dayTabs');
+            const days = getWeekDays();
+            const mon = days[0];
+            document.getElementById('weekLabel').textContent = `Week of ${mon.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}`;
+
+            container.innerHTML = '';
+            days.forEach((day, i) => {
+                const ds = dateStr(day);
+                const dayTasks = getTasksForDay(day);
+                const isDone = completions[ds] && completions[ds]._dayDone;
+                const hasTasks = dayTasks.length > 0;
+
+                const tab = document.createElement('div');
+                tab.className = `day-tab ${i === selectedDayIdx ? 'active' : ''} ${hasTasks ? 'has-tasks' : ''} ${isDone ? 'completed' : ''}`;
+                tab.innerHTML = `<div class="dt-name">${DAY_NAMES[i]}</div><div class="dt-num">${day.getDate()}</div>`;
+                tab.onclick = () => { selectedDayIdx = i; renderAll(); };
+                container.appendChild(tab);
+            });
+        }
+
+        function renderTaskList() {
+            const container = document.getElementById('taskList');
+            const day = getWeekDays()[selectedDayIdx];
+            const dStr = dateStr(day);
+            const dayTasks = getTasksForDay(day);
+
+            container.innerHTML = '';
+            if (dayTasks.length === 0) {
+                container.innerHTML = '<div class="no-tasks">No tasks for this day</div>';
+                return;
+            }
+
+            dayTasks.forEach(t => {
+                const isDone = !!(completions[dStr] && completions[dStr][t.taskId]);
+                const item = document.createElement('div');
+                item.className = `task-item ${isDone ? 'done' : ''}`;
+                item.innerHTML = `
+                    <div class="task-check ${isDone ? 'checked' : ''}" onclick="toggleTask('${t.taskId}', '${dStr}')">
+                        ${isDone ? '<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1 5.5l3 3 6-6" stroke="white" stroke-width="2" stroke-linecap="round" /></svg>' : ''}
+                    </div>
+                    <div class="task-name">${t.name}</div>
+                    ${t.tag ? `<div class="task-tag">${t.tag}</div>` : ''}
+                    <div class="task-actions">
+                        <div class="task-act-btn" onclick="openAddModal('${t.taskId}')">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        </div>
+                        <div class="task-act-btn del" onclick="deleteTask('${t.taskId}')">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+
+            if (completions[dStr] && completions[dStr]._dayDone) {
+                const bar = document.createElement('div');
+                bar.className = 'all-done-bar';
+                bar.innerHTML = '✨ Day complete!';
+                container.appendChild(bar);
+            }
+        }
+
+        function renderSidebar() {
+            // Progress Ring
+            const today = new Date();
+            const dStr = dateStr(today);
+            const todayTasks = getTasksForDay(today);
+            const doneCount = todayTasks.filter(t => completions[dStr] && completions[dStr][t.taskId]).length;
+            const pct = todayTasks.length === 0 ? 0 : Math.round((doneCount / todayTasks.length) * 100);
+            
+            const circle = document.getElementById('progressRingCircle');
+            const circumference = 314;
+            circle.style.strokeDashoffset = circumference - (circumference * pct / 100);
+            document.getElementById('progressPctText').textContent = `${pct}%`;
+            document.getElementById('progressSubText').textContent = `${doneCount} / ${todayTasks.length}`;
+
+            // Week Overview
+            const overview = document.getElementById('weekOverview');
+            overview.innerHTML = '';
+            getWeekDays().forEach((day, i) => {
+                const ds = dateStr(day);
+                const dayTasks = getTasksForDay(day);
+                const done = dayTasks.filter(t => completions[ds] && completions[ds][t.taskId]).length;
+                const p = dayTasks.length === 0 ? 0 : (done / dayTasks.length);
+                
+                const dayEl = document.createElement('div');
+                dayEl.className = 'wo-day';
+                dayEl.innerHTML = `
+                    <div class="wo-name">${DAY_NAMES[i][0]}</div>
+                    <div class="wo-bar-wrap">
+                        <div class="wo-bar ${p === 1 ? 'full' : p > 0 ? 'partial' : ''}" style="height: ${Math.max(3, p * 40)}px"></div>
+                    </div>
+                `;
+                overview.appendChild(dayEl);
+            });
+
+            // Streak
+            const stats = calcStreak();
+            document.getElementById('sidebarStreak').textContent = stats.current;
+            
+            const bars = document.getElementById('streakBars');
+            bars.innerHTML = '';
+            for (let i = 14; i >= 0; i--) {
+                const d = addDays(new Date(), -i);
+                const isDone = completions[dateStr(d)] && completions[dateStr(d)]._dayDone;
+                const bar = document.createElement('div');
+                bar.className = `streak-bar ${isDone ? 'on' : ''}`;
+                bars.appendChild(bar);
+            }
+        }
+
+        function renderHeatmap() {
+            const container = document.getElementById('heatmapInner');
+            container.innerHTML = '';
+            
+            const monRow = document.createElement('div');
+            monRow.className = 'hm-months';
+            monRow.style.cssText = 'display:flex;margin-bottom:4px;margin-left:28px;gap:3px';
+
+            const rowsWrap = document.createElement('div');
+            rowsWrap.className = 'hm-rows';
+
+            const dayLabels = document.createElement('div');
+            dayLabels.className = 'hm-day-labels';
+            ['Mon', '', 'Wed', '', 'Fri', '', 'Sun'].forEach(l => {
+                const d = document.createElement('div');
+                d.className = 'hm-day-lbl';
+                d.textContent = l;
+                dayLabels.appendChild(d);
+            });
+
+            const cols = document.createElement('div');
+            cols.className = 'hm-cols';
+            cols.id = 'heatmapCols';
+            
+            const HEAT_START = new Date(2026, 2, 2); // Monday Mar 2 2026
+            const HEAT_END = new Date(2028, 11, 31); // Dec 31 2028
+            const today = new Date();
+            const todayStr = dateStr(today);
+            
+            let curr = new Date(HEAT_START);
+            let lastMonth = -1;
+            let lastYear = -1;
+            let todayCol = null;
+            let xOffset = 0; // Manual tracking of horizontal position
+
+            while (curr <= HEAT_END) {
+                const col = document.createElement('div');
+                col.className = 'hm-col';
+                
+                const monthIdx = curr.getMonth();
+                const year = curr.getFullYear();
+                const isNewMonth = (monthIdx !== lastMonth || year !== lastYear);
+
+                if (isNewMonth && lastMonth !== -1) {
+                    xOffset += 12; // Extra gap between months
+                    col.style.marginLeft = '12px';
+                }
+                
+                cols.appendChild(col);
+
+                if (isNewMonth) {
+                    const mLabel = document.createElement('div');
+                    mLabel.className = 'hm-month-label';
+                    mLabel.style.left = xOffset + 'px';
+                    
+                    mLabel.textContent = MONTH_NAMES[monthIdx].slice(0, 3);
+                    if (year !== lastYear && lastYear !== -1) {
+                         mLabel.textContent += " '" + String(year).slice(2);
+                    }
+                    monRow.appendChild(mLabel);
+                    lastMonth = monthIdx;
+                    lastYear = year;
+                }
+
+                for (let d = 0; d < 7; d++) {
+                    const date = addDays(curr, d);
+                    if (date > HEAT_END) break;
+                    
+                    const ds = dateStr(date);
+                    const isDone = completions[ds] && completions[ds]._dayDone;
+                    const isFuture = date > today;
+                    
+                    const cell = document.createElement('div');
+                    cell.className = `hm-cell ${isDone ? 'l4' : ''} ${isFuture ? 'future' : ''}`;
+                    if (ds === todayStr) {
+                        cell.classList.add('today-cell');
+                        todayCol = col;
+                    }
+                    
+                    cell.onmouseenter = (e) => {
+                        const tooltip = document.getElementById('hmTooltip');
+                        tooltip.textContent = `${date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}: ${isDone ? 'Goal met' : 'No activity'}`;
+                        tooltip.style.display = 'block';
+                        tooltip.style.left = (e.clientX + 10) + 'px';
+                        tooltip.style.top = (e.clientY - 30) + 'px';
+                    };
+                    cell.onmouseleave = () => {
+                        document.getElementById('hmTooltip').style.display = 'none';
+                    };
+                    
+                    col.appendChild(cell);
+                }
+                xOffset += 15; // Standard week width 12px + 3px gap
+                curr = addDays(curr, 7);
+            }
+            
+            rowsWrap.appendChild(dayLabels);
+            rowsWrap.appendChild(cols);
+            container.appendChild(monRow);
+            container.appendChild(rowsWrap);
+
+            // Legend
+            const legend = document.createElement('div');
+            legend.className = 'hm-legend';
+            legend.style.cssText = 'display:flex;align-items:center;gap:6px;margin-top:10px;justify-content:flex-end;padding-right:18px';
+            legend.innerHTML = `
+                <span style="font-size:10px;color:var(--text3)">Less</span>
+                <div style="display:flex;gap:3px">
+                    <div class="hm-cell" style="width:10px;height:10px"></div>
+                    <div class="hm-cell l1" style="width:10px;height:10px;background:var(--green1)"></div>
+                    <div class="hm-cell l2" style="width:10px;height:10px;background:var(--green2)"></div>
+                    <div class="hm-cell l3" style="width:10px;height:10px;background:var(--green3)"></div>
+                    <div class="hm-cell l4" style="width:10px;height:10px"></div>
+                </div>
+                <span style="font-size:10px;color:var(--text3)">More</span>
+            `;
+            container.appendChild(legend);
+
+            // Auto-scroll to today
+            if (todayCol) {
+                todayCol.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }
+        }
+
+        function changeWeek(dir) {
+            currentWeekOffset += dir;
+            renderAll();
+        }
+
+        // --- INLINE FORM ---
+        function toggleInlineForm(show) {
+            document.getElementById('inlineForm').style.display = show ? 'flex' : 'none';
+            document.getElementById('addInlineBtn').style.display = show ? 'none' : 'flex';
+            if (show) setTimeout(() => document.getElementById('inlineTaskName').focus(), 50);
+        }
+
+        async function saveInlineTask() {
+            const name = document.getElementById('inlineTaskName').value.trim();
+            if (!name) return;
+            
+            const mon = getCurrentWeekMonday();
+            const taskData = {
+                name, tag: '', repeat: 'none',
+                scope: 'week', weekKey: dateStr(mon), dayIdx: selectedDayIdx,
+                taskId: Math.random().toString(36).slice(2, 10)
+            };
+
+            try {
+                const res = await fetch('/api/tasks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify(taskData)
+                });
+                if (!res.ok) throw new Error('Save failed');
+                
+                await fetchData();
+                document.getElementById('inlineTaskName').value = '';
+                toggleInlineForm(false);
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function resetData() {
+            if (!confirm('Are you sure you want to delete ALL tasks and completions? This cannot be undone.')) return;
+            try {
+                const res = await fetch('/api/completions/reset', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error('Reset failed');
+                alert('All data has been reset.');
+                await fetchData();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        function init() {
+            if (token) {
+                document.getElementById('authScreen').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+                fetchData();
+            } else {
+                document.getElementById('authScreen').style.display = 'flex';
+                document.getElementById('app').style.display = 'none';
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
